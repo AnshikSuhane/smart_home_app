@@ -45,7 +45,7 @@ const Sidebar = ({ children }) => {
           </div>
 
           <ul className="mt-8 flex-1 space-y-2">
-            {[{ path: '/', icon: <Home size={20} />, label: 'Dashboard' },
+            {[{ path: '/dashboard', icon: <Home size={20} />, label: 'Dashboard' },
               { path: '/routines', icon: <Calendar size={20} />, label: 'Routines' },
               { path: '/energy', icon: <Activity size={20} />, label: 'Energy' },
               { path: '/profile', icon: <User size={20} />, label: 'Profile' },

@@ -5,7 +5,7 @@ import Routine from "./pages/Routines";
 import Energy from "./pages/Energy";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
-
+import RoomDetail from "./pages/RoomDetail";
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         <Route path="/energy" element={<Energy />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile" element={<Profile />} />
-
+        <Route path="/room/:id" element={<RoomDetail />} />
       </Routes>
     </Sidebar>
   );
