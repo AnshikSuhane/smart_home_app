@@ -1,301 +1,271 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Home, Power } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Typography,
-  Checkbox,
-  FormControlLabel,
-  Grid,
-  FormGroup,
-  CircularProgress
-} from '@mui/material';
+  Home,
+  Plus,
+  Cpu,
+  Thermometer,
+  Lightbulb,
+  Power,
+  Activity,
+} from "lucide-react";
 
 const Dashboard = () => {
-  const [rooms, setRooms] = useState([]);
-  const [roomName, setRoomName] = useState('');
-  const [roomType, setRoomType] = useState('livingroom');
-  const [selectedDevices, setSelectedDevices] = useState([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState(null);
+  const navigate = useNavigate();
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [newRoomName, setNewRoomName] = useState("");
+  const [isAddRoomModalOpen, setIsAddRoomModalOpen] = useState(false);
 
-  const devicesByType = {
-    livingroom: [
-      { id: 'tv', name: 'TV', power: 100 },
-      { id: 'ac', name: 'Air Conditioner', power: 1500 },
-      { id: 'light', name: 'Ceiling Light', power: 60 },
-      { id: 'fan', name: 'Fan', power: 75 }
-    ],
-    bedroom: [
-      { id: 'ac', name: 'Air Conditioner', power: 1500 },
-      { id: 'light', name: 'Ceiling Light', power: 60 },
-      { id: 'fan', name: 'Fan', power: 75 },
-      { id: 'lamp', name: 'Bedside Lamp', power: 40 }
-    ],
-    kitchen: [
-      { id: 'fridge', name: 'Refrigerator', power: 150 },
-      { id: 'microwave', name: 'Microwave', power: 1100 },
-      { id: 'light', name: 'Ceiling Light', power: 60 },
-      { id: 'dishwasher', name: 'Dishwasher', power: 1800 }
-    ]
-  };
+  const userId = 0; // Replace with actual user authentication
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
-
-  const fetchRooms = async () => {
-    setLoading(true);
+  // fetch all user all rooms data
+  const fetchAllRoomAppliance = async () => {
     try {
-      const response = await fetch('https://jagannath-45cbd-default-rtdb.firebaseio.com/users.json');
-      const data = await response.json();
+      setLoading(true);
+      const res = await axios.get(
+        `https://jagannath-45cbd-default-rtdb.firebaseio.com/users/${userId}.json`
+      );
+
+      const data = res.data;
       if (data) {
-        const roomsArray = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key],
-          devices: data[key].devices || [] // Ensure devices is always an array
-        }));
-        setRooms(roomsArray);
+        setUserData(data);
       } else {
-        setRooms([]); // Set empty array if no data
+        setUserData(null);
       }
     } catch (error) {
-      console.error('Error fetching rooms:', error);
-      setRooms([]); // Set empty array on error
+      console.error("Error fetching data:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const addRoom = async (e) => {
-    e.preventDefault();
-    if (!roomName.trim() || selectedDevices.length === 0) return;
-
-    const selectedDevicesDetails = selectedDevices.map(deviceId => {
-      const device = devicesByType[roomType].find(d => d.id === deviceId);
-      return {
-        id: deviceId,
-        name: device.name,
-        power: device.power,
-        status: 'off'
-      };
-    });
-
-    const totalPower = selectedDevicesDetails.reduce((sum, device) => sum + device.power, 0);
-
-    const newRoom = {
-      name: roomName,
-      type: roomType,
-      powerConsumption: totalPower,
-      devices: selectedDevicesDetails
-    };
+  // add new room
+  const addNewRoom = async () => {
+    if (!newRoomName.trim()) return;
 
     try {
-      const response = await fetch('https://jagannath-45cbd-default-rtdb.firebaseio.com/users.json', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newRoom)
-      });
+      const newRoom = {
+        roomName: newRoomName,
+        id: Date.now().toString(),
+        devices: [],
+      };
 
-      if (response.ok) {
-        fetchRooms();
-        setRoomName('');
-        setSelectedDevices([]);
-        setIsFormOpen(false);
-      }
+      const updatedRooms = userData.rooms
+        ? [...userData.rooms, newRoom]
+        : [newRoom];
+
+      await axios.patch(
+        `https://jagannath-45cbd-default-rtdb.firebaseio.com/users/${userId}.json`,
+        { rooms: updatedRooms }
+      );
+
+      setUserData((prev) => ({
+        ...prev,
+        rooms: updatedRooms,
+      }));
+
+      setNewRoomName("");
+      setIsAddRoomModalOpen(false);
     } catch (error) {
-      console.error('Error adding room:', error);
+      console.error("Error adding room:", error);
     }
   };
 
-  const handleDeviceToggle = (deviceId) => {
-    setSelectedDevices(prev =>
-      prev.includes(deviceId)
-        ? prev.filter(id => id !== deviceId)
-        : [...prev, deviceId]
-    );
+  useEffect(() => {
+    fetchAllRoomAppliance();
+
+    // Optional: Set up real-time updates
+    // const intervalId = setInterval(fetchAllRoomAppliance, 30000);
+    // return () => clearInterval(intervalId);
+  }, []);
+
+  const getRoomIcon = (roomName) => {
+    const lowercaseName = roomName.toLowerCase();
+    if (lowercaseName.includes("living")) return <Home className="w-6 h-6" />;
+    if (lowercaseName.includes("bedroom"))
+      return <Thermometer className="w-6 h-6" />;
+    if (lowercaseName.includes("kitchen"))
+      return <Lightbulb className="w-6 h-6" />;
+    return <Cpu className="w-6 h-6" />;
   };
 
+  //calculateTotalDevices
+  const calculateTotalDevices = (rooms) => {
+    return rooms
+      ? rooms.reduce((total, room) => total + (room.devices?.length || 0), 0)
+      : 0;
+  };
+
+  // loading
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin">
+          <Cpu className="w-12 h-12 text-blue-600" />
+        </div>
+      </div>
     );
   }
 
+  // // Alerts for Device Malfunctions function
+
+  // async function fetchUserDataAndCheckMalfunctions() {
+  //   try {
+  //     const response = await fetch(
+  //       `https://jagannath-45cbd-default-rtdb.firebaseio.com/users/${userId}.json`
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch data");
+  //     }
+
+  //     const user = await response.json();
+  //     checkDeviceMalfunctions(user);
+  //   } catch (error) {
+  //     console.error("Error fetching user data:", error);
+  //   }
+  // }
+
+  // function checkDeviceMalfunctions(user) {
+  //   const currentTime = Date.now();
+  //   // const threshold = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  //   const threshold = 60000; // 24 hours in milliseconds
+
+  //   // Iterate through each room
+  //   user.rooms.forEach((room) => {
+  //     console.log(`🔹 Checking devices in room: ${room.roomName}`);
+
+  //     // Iterate through each device in the room
+  //     room.devices.forEach((device) => {
+  //       if (device.status === "on") {
+  //         const elapsedTime = currentTime - device.start_time;
+
+  //         if (elapsedTime > threshold) {
+  //           device.alert = true;
+  //           console.log(
+  //             `⚠️ ALERT: The device '${device.name}' in room '${room.roomName}' has been ON for more than 24 hours.`
+  //           );
+  //         }
+  //       }
+  //     });
+  //   });
+  // }
+
+  // useEffect(() => {
+  //   fetchUserDataAndCheckMalfunctions(); // Call function once
+  //   const interval = setInterval(fetchUserDataAndCheckMalfunctions, 60000);
+
+  //   return () => clearInterval(interval); // Cleanup
+  // }, [fetchUserDataAndCheckMalfunctions]); // Ensure dependencies are correct
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f5', p: 4 }}>
-      <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            Smart Home Dashboard
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Plus />}
-            onClick={() => setIsFormOpen(true)}
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Dashboard Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">
+              Smart Home Dashboard
+            </h1>
+            <p className="text-gray-500">
+              {userData?.rooms
+                ? `${userData.rooms.length} Rooms, ${calculateTotalDevices(
+                    userData.rooms
+                  )} Devices`
+                : "No Rooms Yet"}
+            </p>
+          </div>
+          <button
+            onClick={() => setIsAddRoomModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
+            <Plus className="w-5 h-5" />
             Add Room
-          </Button>
-        </Box>
+          </button>
+        </div>
 
         {/* Rooms Grid */}
-        <Grid container spacing={3}>
-          {rooms && rooms.map((room) => (
-            <Grid item xs={12} sm={6} md={4} key={room.id}>
-              <Card 
-                sx={{ 
-                  cursor: 'pointer',
-                  '&:hover': { boxShadow: 6 },
-                  transition: 'box-shadow 0.3s'
-                }}
-                onClick={() => setSelectedRoom(room)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {userData?.rooms ? (
+            userData.rooms.map((room, index) => (
+              <div
+                key={room.id || index}
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all cursor-pointer"
+                onClick={() => navigate(`/room/${room.id}`)}
               >
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Box sx={{ p: 1, bgcolor: '#e3f2fd', borderRadius: 2 }}>
-                      <Home color="#1976d2" />
-                    </Box>
-                    <Typography variant="caption" sx={{ textTransform: 'capitalize' }}>
-                      {room.type}
-                    </Typography>
-                  </Box>
-                  <Typography variant="h6" sx={{ mb: 2 }}>{room.name}</Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                    <Box sx={{ bgcolor: '#e3f2fd', px: 1, py: 0.5, borderRadius: 10 }}>
-                      <Typography variant="body2" color="primary">
-                        {room.devices?.length || 0} Devices
-                      </Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: '#e8f5e9', px: 1, py: 0.5, borderRadius: 10 }}>
-                      <Typography variant="body2" color="success.main">
-                        Active
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Power size={16} />
-                    <Typography variant="body2">
-                      {room.powerConsumption || 0}W/h
-                    </Typography>
-                  </Box>
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Devices:</Typography>
-                    {room.devices && room.devices.map((device) => (
-                      <Typography key={device.id} variant="body2" color="text.secondary">
-                        {device.name} ({device.power}W)
-                      </Typography>
-                    ))}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-blue-100 p-3 rounded-full">
+                      {getRoomIcon(room.roomName)}
+                    </div>
+                    <h3 className="text-xl font-semibold">{room.roomName}</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Power className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-600">
+                      {room.devices?.length || 0} Devices
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-500" />
+                    <span className="text-gray-600">Active</span>
+                  </div>
+                  <button className="text-blue-600 hover:underline">
+                    Manage Room
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 bg-white rounded-lg shadow-md">
+              <p className="text-gray-500 mb-4">No rooms have been added yet</p>
+              <button
+                onClick={() => setIsAddRoomModalOpen(true)}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Create First Room
+              </button>
+            </div>
+          )}
+        </div>
 
-        {/* Add Room Dialog */}
-        <Dialog open={isFormOpen} onClose={() => setIsFormOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Add New Room</DialogTitle>
-          <DialogContent>
-            <Box component="form" onSubmit={addRoom} sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
-                fullWidth
-                label="Room Name"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
+        {/* Add Room Modal */}
+        {isAddRoomModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 w-full max-w-md">
+              <h2 className="text-2xl font-bold mb-6 text-center">
+                Add New Room
+              </h2>
+              <input
+                type="text"
+                placeholder="Enter Room Name (e.g., Living Room)"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              
-              <FormControl fullWidth>
-                <InputLabel>Room Type</InputLabel>
-                <Select
-                  value={roomType}
-                  label="Room Type"
-                  onChange={(e) => setRoomType(e.target.value)}
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setIsAddRoomModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
-                  <MenuItem value="livingroom">Living Room</MenuItem>
-                  <MenuItem value="bedroom">Bedroom</MenuItem>
-                  <MenuItem value="kitchen">Kitchen</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormGroup>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Select Devices</Typography>
-                {devicesByType[roomType].map((device) => (
-                  <FormControlLabel
-                    key={device.id}
-                    control={
-                      <Checkbox
-                        checked={selectedDevices.includes(device.id)}
-                        onChange={() => handleDeviceToggle(device.id)}
-                      />
-                    }
-                    label={`${device.name} (${device.power}W)`}
-                  />
-                ))}
-              </FormGroup>
-
-              <Button type="submit" variant="contained" fullWidth>
-                Add Room
-              </Button>
-            </Box>
-          </DialogContent>
-        </Dialog>
-
-        {/* Room Details Dialog */}
-        <Dialog 
-          open={!!selectedRoom} 
-          onClose={() => setSelectedRoom(null)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>{selectedRoom?.name}</DialogTitle>
-          <DialogContent>
-            {selectedRoom && (
-              <Box sx={{ pt: 2 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Room Type</Typography>
-                <Typography sx={{ mb: 3, textTransform: 'capitalize' }}>{selectedRoom.type}</Typography>
-                
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Power Consumption</Typography>
-                <Typography sx={{ mb: 3 }}>{selectedRoom.powerConsumption || 0}W/h</Typography>
-                
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Devices</Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {selectedRoom.devices && selectedRoom.devices.map((device) => (
-                    <Box 
-                      key={device.id} 
-                      sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <Typography>{device.name}</Typography>
-                      <Typography color="text.secondary">{device.power}W</Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            )}
-          </DialogContent>
-        </Dialog>
-      </Box>
-    </Box>
+                  Cancel
+                </button>
+                <button
+                  onClick={addNewRoom}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Add Room
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

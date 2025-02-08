@@ -19,22 +19,23 @@ const Sidebar = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Mobile menu button */}
+    // Remove any default margins/padding from root container
+    <div className="flex w-full h-screen overflow-hidden">
+      {/* Mobile menu button - adjusted z-index */}
       <button
         type="button"
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+        className="lg:hidden fixed top-2 left-2 z-50 p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
       >
         <span className="sr-only">Open sidebar</span>
         {isSidebarOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
       </button>
 
-      {/* Sidebar */}
+      {/* Sidebar - removed any margin/padding from container */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 h-full w-64 bg-gray-800 shadow-lg ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } transition-transform duration-300 ease-in-out z-40`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between h-16 px-4 bg-indigo-600">
@@ -44,25 +45,27 @@ const Sidebar = ({ children }) => {
             </button>
           </div>
 
-          <ul className="mt-8 flex-1 space-y-2">
-            {[{ path: '/dashboard', icon: <Home size={20} />, label: 'Dashboard' },
+          <ul className="mt-8 flex-1 space-y-2 px-2">
+            {[
+              { path: '/dashboard', icon: <Home size={20} />, label: 'Dashboard' },
               { path: '/routines', icon: <Calendar size={20} />, label: 'Routines' },
               { path: '/energy', icon: <Activity size={20} />, label: 'Energy' },
               { path: '/profile', icon: <User size={20} />, label: 'Profile' },
-              { path: '/settings', icon: <Settings size={20} />, label: 'Settings' }].map((item) => (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center gap-x-4 p-3 rounded-lg transition-all duration-200 ${
-                        isActive ? "bg-indigo-500 text-white" : "text-gray-300 hover:bg-gray-700"
-                      }`
-                    }
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    {item.icon} {item.label}
-                  </NavLink>
-                </li>
+              { path: '/settings', icon: <Settings size={20} />, label: 'Settings' }
+            ].map((item) => (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center gap-x-4 p-3 rounded-lg transition-all duration-200 ${
+                      isActive ? "bg-indigo-500 text-white" : "text-gray-300 hover:bg-gray-700"
+                    }`
+                  }
+                  onClick={() => setIsSidebarOpen(false)}
+                >
+                  {item.icon} {item.label}
+                </NavLink>
+              </li>
             ))}
           </ul>
 
@@ -78,9 +81,13 @@ const Sidebar = ({ children }) => {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 lg:pl-64 p-4">
-        <main className="min-h-screen">{children}</main>
+      {/* Main content - adjusted margins and padding */}
+      <div className="flex-1 ml-0 lg:ml-64">
+        <main className="h-full overflow-auto">
+          <div className="p-4">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
