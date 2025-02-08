@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable react/prop-types */
+import{ useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Power,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 // Device Icon Component
+// eslint-disable-next-line react/prop-types
 const DeviceIcon = ({ type = "", className = "h-6 w-6" }) => {
   const deviceType = type?.toLowerCase() ?? "";
 
@@ -136,6 +138,7 @@ const RoomDetail = () => {
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // eslint-disable-next-line no-unused-vars
   const { id } = useParams();
   const userId = 0;
 

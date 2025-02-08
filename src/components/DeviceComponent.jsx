@@ -1,11 +1,10 @@
-import React from "react";
-
+/* eslint-disable react/prop-types */
 const DeviceComponent = ({
   userData,
-  userIndex, // Added userIndex as a prop
+  userIndex,
   deleteDevice,
   toggleDeviceStatus,
-  updateDeviceSetting, // Added updateDeviceSetting as a prop
+  updateDeviceSetting,
 }) => {
   return (
     <div>
